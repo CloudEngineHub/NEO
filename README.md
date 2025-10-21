@@ -101,7 +101,7 @@ We release 2B and 9B **NEO** in Pre-Training (PT), Mid-Training (MT), and Superv
 If **NEO series** is helpful for your research, please consider **star** ⭐ and **citation** 📝 :
 ```bibtex
 @article{Diao2025NEO,
-  title        = {From Pixels to Words — Towards Native Vision-Language Primitives at Scale},
+  title        = {From Pixels to Words--Towards Native Vision-Language Primitives at Scale},
   author       = {Diao, Haiwen and Li, Mingxuan and Wu, Silei and Dai, Linjun and Wang, Xiaohua and Deng, Hanming and Lu, Lewei and Lin, Dahua and Liu, Ziwei},
   journal      = {arXiv preprint arXiv:2510.14979},
   year         = {2025}
