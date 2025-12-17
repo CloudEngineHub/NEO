@@ -9,8 +9,8 @@
 
 ## 📜 News   
 [2025/12] We sincerely appreciate the interest and emails. We clarify the following updates:
-- We are preparing an **open-source release of the training code**. Stay tuned !
-- **NEO v1.5** will be released soon with **further improvements and new capabilities**.    
+- 🔥 We are preparing an **open-source release of the training code**. Stay tuned !
+- 🔥 **NEO v1.5** will be released soon with **further improvements and new capabilities**.    
 
 [2025/10] The [paper](https://arxiv.org/abs/2510.14979), [weights](https://huggingface.co/collections/Paranioar/neo1-0-68f0db9cbac952be3eca7089), and [test code](https://github.com/EvolvingLMMs-Lab/NEO/blob/main/VLMEvalKit/README.md) of **NEO** are released !     
 
