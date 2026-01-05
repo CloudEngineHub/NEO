@@ -8,18 +8,18 @@
 
 
 ## 📜 News   
-[2025/12] We sincerely appreciate the interest and emails. We clarify the following updates:
-- 🔥 We are preparing an **open-source release of the training code**. Stay tuned !
-- 🔥 **NEO v1.5** will be released soon with **further improvements and new capabilities** !    
 
-[2025/10] The [paper](https://arxiv.org/abs/2510.14979), [weights](https://huggingface.co/collections/Paranioar/neo1-0-68f0db9cbac952be3eca7089), and [test code](https://github.com/EvolvingLMMs-Lab/NEO/blob/main/VLMEvalKit/README.md) of **NEO** are released !     
+[2026/01] We sincerely appreciate the interest and emails. We clarify the following updates:
+- 🔥🔥🔥 We released the **open-source training code** !!!
+
+[2025/10] The [paper](https://arxiv.org/abs/2510.14979), [weights](https://huggingface.co/collections/Paranioar/neo1-0-68f0db9cbac952be3eca7089), [test code](https://github.com/EvolvingLMMs-Lab/NEO/blob/main/VLMEvalKit/README.md) and [training code](https://github.com/EvolvingLMMs-Lab/NEO/blob/main/VLMTrainKit/README.md) of **NEO** are released !     
 [2025/09] 💥💥💥 **NEO** has been completed !  
 
 
 ## 📋 Todo List
 
 - [x] [Evaluation guide](VLMEvalKit/README.md)
-- [ ] Training guide
+- [x] [Training guide](VLMTrainKit/README.md)
 
 
 ## 💡 Motivation
