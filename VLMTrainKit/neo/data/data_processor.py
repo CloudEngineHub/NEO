@@ -1,40 +1,23 @@
 import json
 import random
-import re
 from dataclasses import dataclass
 from functools import partial
-from pathlib import Path
-from typing import Any, Dict, List, Optional, Sequence, Tuple
+from typing import Dict, Sequence
 
-import numpy as np
 import torch
-import torch.nn.functional as F
 from PIL import Image
 from torch.utils.data import Dataset
 from transformers import AutoTokenizer, PreTrainedTokenizer
 from transformers.utils import logging
 
-from ..train.argument import DataArguments
+from ..train.argument import DataArguments, TrainingArguments
 from . import data_list
-from .constants import (
-    ALL_SPECIAL_TOKEN_LIST,
-    IGNORE_INDEX,
-    IMG_CONTEXT_TOKEN,
-    IMG_END_TOKEN,
-    IMG_START_TOKEN,
-)
-from .utils import (
-    build_transform,
-    dynamic_preprocess_native_resolution,
-    len2weight,
-    tokenize_mm_chat_conversations,
-)
+from .constants import (ALL_SPECIAL_TOKEN_LIST, IGNORE_INDEX,
+                        IMG_CONTEXT_TOKEN, IMG_START_TOKEN)
+from .utils import (build_transform, dynamic_preprocess_native_resolution,
+                    len2weight, tokenize_mm_chat_conversations)
 
 logger = logging.get_logger(__name__)
-
-
-def _make_abs_paths(base: Path, files: str) -> str:
-    return f"{(base / files).resolve()}"
 
 
 def read_jsonl(path):
@@ -56,70 +39,7 @@ def pad_and_cat(tensor_list):
     return stacked_tensor
 
 
-def _build_messages(item: Dict[str, Any], base_path: Path) -> List[Dict[str, Any]]:
-    # Extract and normalize images and videos
-    images = item.get("image") or []
-    if isinstance(images, str):
-        images = [images]
-
-    videos = item.get("video") or []
-    if isinstance(videos, str):
-        videos = [videos]
-
-    # Build media pools with absolute paths
-    image_pool = [
-        {"type": "image", "image": _make_abs_paths(base_path, img)} for img in images
-    ]
-    video_pool = [
-        {"type": "video", "video": _make_abs_paths(base_path, vid)} for vid in videos
-    ]
-
-    messages = []
-    for turn in item["conversations"]:
-        role = "user" if turn["from"] == "human" else "assistant"
-        text: str = turn["value"]
-
-        if role == "user":
-            content = []
-            # Split text by <image> or <video> placeholders while keeping delimiters
-            text_parts = re.split(r"(<image>|<video>)", text)
-
-            for seg in text_parts:
-                if seg == "<image>":
-                    if not image_pool:
-                        raise ValueError(
-                            "Number of <image> placeholders exceeds the number of provided images"
-                        )
-                    content.append(image_pool.pop(0))
-                elif seg == "<video>":
-                    if not video_pool:
-                        raise ValueError(
-                            "Number of <video> placeholders exceeds the number of provided videos"
-                        )
-                    content.append(video_pool.pop(0))
-                elif seg.strip():
-                    content.append({"type": "text", "text": seg.strip()})
-
-            messages.append({"role": role, "content": content})
-        else:
-            # Assistant messages contain only text
-            messages.append({"role": role, "content": [{"type": "text", "text": text}]})
-
-    # Check for unused media files
-    if image_pool:
-        raise ValueError(
-            f"{len(image_pool)} image(s) remain unused (not consumed by placeholders)"
-        )
-    if video_pool:
-        raise ValueError(
-            f"{len(video_pool)} video(s) remain unused (not consumed by placeholders)"
-        )
-
-    return messages
-
-
 class LazySupervisedDataset(Dataset):
-
     def __init__(
         self,
         tokenizer: PreTrainedTokenizer,
@@ -198,6 +118,7 @@ class LazySupervisedDataset(Dataset):
         assert (
             self.data_args.dynamic_image_size == "native_resolution"
         ), "Only native resolution is supported."
+
         patch_size = self.data_args.patch_size
         downsample_ratio = self.data_args.downsample_ratio
         min_pixels = self.data_args.min_pixels
@@ -210,47 +131,55 @@ class LazySupervisedDataset(Dataset):
                 if isinstance(source["image"], list)
                 else [source["image"]]
             )
-        else:
+        elif "images" in source:
             image_path_list = source["images"]
-
-        # hack code to ensure the first human round has image tag
-        if len(image_path_list) == 1:
-            for conv in source["conversations"]:
-                if conv["from"] == "human":
-                    # the first round for human should have an image
-                    if "<image>" not in conv["value"]:
-                        conv["value"] = "<image>\n" + conv["value"]
-                break
+        else:
+            image_path_list = []
 
         num_image = len(image_path_list)
-        transform = build_transform(
-            input_size=self.data_args.image_size,
-            is_train=self.is_train,
-            resize=False,
-        )
-        images, num_tiles = [], []
-        for image_path in image_path_list:
-            image = Image.open(image_path).convert("RGB")
-            patch = dynamic_preprocess_native_resolution(
-                image,
-                min_pixels=min_pixels,
-                max_pixels=(
-                    max_pixels
-                    if num_image == 1
-                    else max(
-                        max_pixels * 2 // num_image,
-                        min_pixels,
-                    )
-                ),
-                size_factor=int(patch_size / downsample_ratio),
+
+        if num_image > 0:
+            # hack code to ensure the first human round has image tag
+            if num_image == 1:
+                for conv in source["conversations"]:
+                    if conv["from"] == "human":
+                        # the first round for human should have an image
+                        if "<image>" not in conv["value"]:
+                            conv["value"] = "<image>\n" + conv["value"]
+                    break
+
+            transform = build_transform(
+                input_size=self.data_args.image_size,
+                is_train=self.is_train,
+                resize=False,
             )
-            images.append(patch)
-            w, h = patch.size
-            num_tiles.append(
-                int(w * h // patch_size**2 * downsample_ratio**2)
-            )  # 192 patches
-        pixel_values = torch.stack([transform(image) for image in images])
-        num_image_tokens = [num_tile for num_tile in num_tiles]
+            images, num_tiles = [], []
+            for image_path in image_path_list:
+                image = Image.open(image_path).convert("RGB")
+                patch = dynamic_preprocess_native_resolution(
+                    image,
+                    min_pixels=min_pixels,
+                    max_pixels=(
+                        max_pixels
+                        if num_image == 1
+                        else max(
+                            max_pixels * 2 // num_image,
+                            min_pixels,
+                        )
+                    ),
+                    size_factor=int(patch_size / downsample_ratio),
+                )
+                images.append(patch)
+                w, h = patch.size
+                num_tiles.append(
+                    int(w * h // patch_size**2 * downsample_ratio**2)
+                )  # 192 patches
+            pixel_values = [transform(image) for image in images]
+            num_image_tokens = [num_tile for num_tile in num_tiles]
+        else:
+            pixel_values = []
+            num_image_tokens = []
+
         res = tokenize_mm_chat_conversations(
             conversations=source["conversations"],
             tokenizer=self.tokenizer,
@@ -262,7 +191,6 @@ class LazySupervisedDataset(Dataset):
             input_ids=res["input_ids"][0],
             labels=res["labels"][0],
             pixel_values=pixel_values,
-            image_flags=torch.tensor([1] * num_image, dtype=torch.long),
         )
 
 
@@ -272,7 +200,10 @@ class FlattenedDataCollatorForSupervisedDataset:
 
     tokenizer: PreTrainedTokenizer
     data_args: DataArguments
+    training_args: TrainingArguments
     len2weight: callable = None
+    total_samples: int = 0
+    abnormal_samples: int = 0
 
     def __post_init__(self):
         if self.len2weight is None:
@@ -298,7 +229,6 @@ class FlattenedDataCollatorForSupervisedDataset:
             num_tokens = (data_index == i).sum().item()
             seq_boundaries.append(seq_boundaries[-1] + num_tokens)
             assert num_tokens > 0, "num_tokens should be greater than 0"
-
             tmp_input_ids = input_ids[seq_boundaries[-2] : seq_boundaries[-1]]
             tmp_img_start_shift = torch.cat(
                 [
@@ -356,7 +286,14 @@ class FlattenedDataCollatorForSupervisedDataset:
 
     def __call__(self, instances: Sequence[Dict]) -> Dict[str, torch.Tensor]:
         current_data_index = 0
-        input_ids, labels, pixel_values, image_flags, data_index = [], [], [], [], []
+        self.total_samples += 1
+        (
+            input_ids,
+            labels,
+            pixel_values,
+            data_index,
+            image_to_instance_map,
+        ) = ([], [], [], [], [])
 
         for instance in instances:
             instance_len = instance["input_ids"].size(0)
@@ -365,19 +302,60 @@ class FlattenedDataCollatorForSupervisedDataset:
             )
             input_ids.append(instance["input_ids"])
             labels.append(instance["labels"])
-            image_flags.append(instance["image_flags"])
             data_index.append(current_data_index_tensor)
-            pixel_values.extend(instance["pixel_values"])
+
+            instance_pixel_values = instance["pixel_values"]
+            if instance_pixel_values is not None and len(instance_pixel_values) > 0:
+                num_images_in_instance = len(instance_pixel_values)
+                pixel_values.extend(instance_pixel_values)
+                image_to_instance_map.extend(
+                    [current_data_index] * num_images_in_instance
+                )
             current_data_index += 1
 
         input_ids = torch.cat(input_ids, dim=-1)
         labels = torch.cat(labels, dim=-1)
-        image_flags = torch.cat(image_flags, dim=-1)
         data_index = torch.cat(data_index, dim=-1)
 
+        packed_seq_length = input_ids.size(0)
         if input_ids.size(0) > self.data_args.max_seq_length:
-            logger.warning(
-                f"Packed sequence length {input_ids.size(0)} exceeds max_seq_length {self.data_args.max_seq_length}. Memory will overflow."
+            cutoff_idx = data_index[self.data_args.max_seq_length]
+            if cutoff_idx == 0:
+                raise RuntimeError(
+                    f" Sample length {input_ids.size(0)} exceeds max_seq_length {self.data_args.max_seq_length}"
+                )
+            else:
+                truncate_pos = (
+                    (data_index == cutoff_idx).nonzero(as_tuple=True)[0][0].item()
+                )
+
+            truncated_data_index = data_index[truncate_pos:]
+            input_ids = input_ids[:truncate_pos]
+            labels = labels[:truncate_pos]
+            data_index = data_index[:truncate_pos]
+
+            if len(truncated_data_index) > 0 and len(pixel_values) > 0:
+                truncated_instances = set(truncated_data_index.unique().tolist())
+                new_pixel_values = []
+                for img_idx, instance_id in enumerate(image_to_instance_map):
+                    if instance_id not in truncated_instances:
+                        new_pixel_values.append(pixel_values[img_idx])
+
+                num_removed_images = len(pixel_values) - len(new_pixel_values)
+                pixel_values = new_pixel_values
+                print(
+                    f"Removed {num_removed_images} images from {len(truncated_instances)} instances affected by truncation"
+                )
+
+            self.abnormal_samples += 1
+
+            print(
+                f"Abnormal/Total: {self.abnormal_samples}/{self.total_samples}, "
+                f"Batch Size: {self.training_args.per_device_train_batch_size}, "
+                f"Packed sequence length: {packed_seq_length}, "
+                f"max_seq_length: {self.data_args.max_seq_length}, "
+                f"Truncate position: {truncate_pos}, "
+                f"Final sequence length: {input_ids.size(0)}",
             )
 
         seq_boundaries, token_indexes, token_weights = (
@@ -391,7 +369,6 @@ class FlattenedDataCollatorForSupervisedDataset:
                 ),
             )
         )
-
         labels = torch.cat(
             [labels[1:], torch.full(size=(1,), fill_value=IGNORE_INDEX)], dim=-1
         )
@@ -402,20 +379,22 @@ class FlattenedDataCollatorForSupervisedDataset:
             ],
             dim=-1,
         )
-
         indexes = torch.tensor(token_indexes, dtype=torch.long)
         seq_boundaries = torch.tensor(seq_boundaries, dtype=torch.int32)
         loss_weight = torch.where(
             labels == IGNORE_INDEX, torch.zeros_like(token_weights), token_weights
         )
 
-        # Preprocess images
-        images, image_grid_hw = [], []
-        flatten_pixel_values, grid_hw = self.preprocess_pixel_values(
-            pixel_values, self.data_args.patch_size
-        )
-        images.append(flatten_pixel_values)
-        image_grid_hw.append(grid_hw)
+        if len(pixel_values) > 0:
+            images, image_grid_hw = [], []
+            flatten_pixel_values, grid_hw = self.preprocess_pixel_values(
+                pixel_values, self.data_args.patch_size
+            )
+            images.append(flatten_pixel_values)
+            image_grid_hw.append(grid_hw)
+        else:
+            images = None
+            image_grid_hw = []
 
         return {
             "input_ids": input_ids.unsqueeze(0),
@@ -428,10 +407,10 @@ class FlattenedDataCollatorForSupervisedDataset:
         }
 
 
-def make_supervised_data_module(tokenizer, data_args):
+def make_supervised_data_module(tokenizer, data_args, training_args):
     train_dataset = LazySupervisedDataset(tokenizer, data_args=data_args)
     data_collator = FlattenedDataCollatorForSupervisedDataset(
-        tokenizer=tokenizer, data_args=data_args
+        tokenizer=tokenizer, data_args=data_args, training_args=training_args
     )
 
     return dict(

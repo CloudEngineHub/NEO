@@ -1,12 +1,16 @@
 #!/bin/bash
 
+# export NCCL_DEBUG=INFO
+# export NCCL_ASYNC_ERROR_HANDLING=1
+# export TORCH_DISTRIBUTED_DEBUG=DETAIL
+
 # Distributed training configuration
 MASTER_ADDR=${MASTER_ADDR:-"127.0.0.1"}
 MASTER_PORT=${MASTER_PORT:-$(shuf -i 20001-29999 -n 1)}
 NNODES=${WORLD_SIZE:-1}
 
 # DeepSpeed configuration
-deepspeed=./scripts/zero3.json
+deepspeed=./scripts/zero2.json
 
 # Model configuration
 # For detailed logic, refer to: neo/model/build.py build_model function
@@ -15,9 +19,10 @@ llm=""  # Path to the base LLM model for training NEO from scratch
 tokenizer=""  # Path to the tokenizer
 
 # Training hyperparameters
-lr=2e-4
-batch_size=1
-grad_accum_steps=1
+lr=8e-4
+# Global batch size = batch_size * grad_accum_steps * num_gpus
+batch_size=64  # Per-device batch size for controlling global batch size
+grad_accum_steps=5  # Gradient accumulation steps for controlling global batch size
 
 # Training entry point
 entry_file=neo/train/train.py
@@ -26,36 +31,40 @@ entry_file=neo/train/train.py
 datasets=""
 
 # Output configuration
-run_name="neo-baseline"
+run_name=neo-baseline-PT_2B
 output_dir=./output
 
 # Training arguments
 args="
     --deepspeed ${deepspeed} \
-    --model_name_or_path "${mllm}" \
+    --llm_model_name_or_path ${llm} \
+    --tokenizer_name_or_path ${tokenizer} \
     --dataset_use ${datasets} \
     --data_flatten True \
-    --dtype bfloat16 \
+    --bf16 True \
     --output_dir ${output_dir} \
-    --extra_num_layers 12 \  # Number of pre-buffer layers
-    --num_hidden_layers 28 \  # Total number of layers in the model
-    --train_buffer \  # Whether to train only the prebuffer layers
-    --num_train_epochs 0.5 \
+    --extra_num_layers 12 \
+    --num_hidden_layers 40 \
+    --train_buffer True \
+    --max_steps 200000 \
     --per_device_train_batch_size ${batch_size} \
     --per_device_eval_batch_size $((batch_size*2)) \
     --gradient_accumulation_steps ${grad_accum_steps} \
-    --max_pixels 262144 \
-    --min_pixels 12544 \
+    --max_pixels 4194304 \
+    --min_pixels 65536 \
     --eval_strategy "no" \
     --save_strategy "steps" \
-    --save_steps 1000 \
+    --save_steps 10000 \
     --save_total_limit 1 \
     --learning_rate ${lr} \
-    --weight_decay 0.0 \
-    --warmup_ratio 0.03 \
+    --weight_decay 0.01 \
+    --warmup_steps 1000 \
+    --min_lr_ratio 0.1 \
     --max_grad_norm 1 \
     --logging_steps 1 \
-    --model_max_length 8096 \
+    --max_seq_length 16384 \
+    --model_max_length 8192 \
+    --patch_size 16 \
     --gradient_checkpointing True \
     --dataloader_num_workers 4 \
     --run_name ${run_name} \
@@ -65,7 +74,7 @@ args="
 export PYTHONPATH="${PYTHONPATH}:$(pwd)"
 
 # Launch training
-torchrun --nproc_per_node=2 \
+torchrun --nproc_per_node=8 \
          --master_addr=${MASTER_ADDR} \
          --master_port=${MASTER_PORT} \
          ${entry_file} ${args}

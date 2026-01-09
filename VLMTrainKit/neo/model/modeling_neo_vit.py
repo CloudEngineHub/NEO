@@ -2,11 +2,9 @@ from typing import Optional, Tuple, Union
 
 import torch
 import torch.nn as nn
-import torch.utils.checkpoint
+from neo.model.configuration_neo_vit import NEOVisionConfig
 from transformers.modeling_outputs import BaseModelOutputWithPooling
 from transformers.modeling_utils import PreTrainedModel
-
-from neo.model.configuration_neo_vit import NEOVisionConfig
 
 
 def precompute_rope_freqs_sincos(
@@ -165,29 +163,42 @@ class NEOVisionEmbeddings(nn.Module):
         self.sin_cached_y = self.sin_cached_y.to(patch_embeds.device)
 
         patch_embeds = self._apply_2d_rotary_pos_emb(patch_embeds, grid_hw)
-        assert (grid_hw[:, 0] * grid_hw[:, 1]).sum() == patch_embeds.shape[0]
 
-        patches_list = []
-        cur_position = 0
-        for i in range(grid_hw.shape[0]):
-            h, w = grid_hw[i]
-            patches_per_img = (
-                patch_embeds[cur_position : cur_position + h * w]
-                .view(h, w, -1)
-                .unsqueeze(0)
-            )
-            patches_per_img = self.dense_embedding(patches_per_img.permute(0, 3, 1, 2))
-            patches_per_img = patches_per_img.permute(0, 2, 3, 1)
-            patches_list.append(patches_per_img.view(-1, patches_per_img.shape[-1]))
-            cur_position += h * w
+        num_patches_per_img = (grid_hw[:, 0] * grid_hw[:, 1]).to(torch.long)
+        assert int(num_patches_per_img.sum().item()) == patch_embeds.shape[0]
 
-        embeddings = torch.cat(
-            patches_list, dim=0
-        )  # (N_total // downsample_factor**2, C)
-        assert cur_position == patch_embeds.shape[0]
-        assert embeddings.shape[0] == int(
-            patch_embeds.shape[0] / self.downsample_factor**2
-        )
+        B = grid_hw.shape[0]
+        H = grid_hw[:, 0].to(torch.long)
+        W = grid_hw[:, 1].to(torch.long)
+        Hmax = int(H.max().item())
+        Wmax = int(W.max().item())
+
+        padded = patch_embeds.new_zeros(
+            (B, Hmax, Wmax, self.embed_dim)
+        )  # (B,Hmax,Wmax,C)
+        cur = 0
+        for i in range(B):
+            hi = int(H[i].item())
+            wi = int(W[i].item())
+            n = hi * wi
+            x = patch_embeds[cur : cur + n].view(hi, wi, self.embed_dim)
+            padded[i, :hi, :wi, :] = x
+            cur += n
+        assert cur == patch_embeds.shape[0]
+
+        x = padded.permute(0, 3, 1, 2)  # (B,C,Hmax,Wmax)
+        y = self.dense_embedding(x)  # (B,llm_dim,Hmax/d,Wmax/d)
+        y = y.permute(0, 2, 3, 1).contiguous()
+
+        d = self.downsample_factor
+        out_list = []
+        for i in range(B):
+            hi = int(H[i].item()) // d
+            wi = int(W[i].item()) // d
+            out_list.append(y[i, :hi, :wi, :].reshape(-1, self.llm_embed_dim))
+        embeddings = torch.cat(out_list, dim=0)
+        expected = int(((H // d) * (W // d)).sum().item())
+        assert embeddings.shape[0] == expected, (embeddings.shape[0], expected)
 
         return embeddings
 

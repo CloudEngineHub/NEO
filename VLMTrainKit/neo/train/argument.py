@@ -8,12 +8,9 @@ from transformers import TrainingArguments as HfTrainingArguments
 class ModelArguments:
     # Basic model paths
     model_name_or_path: Optional[str] = field(default=None)
-    llm_model_name_or_path: Optional[str] = field(
-        default="/mnt/afs/denghanming/projects/qwen3_pretrain/pretrained/Qwen3-1.7B-Base"
-    )
-    tokenizer_name_or_path: Optional[str] = field(
-        default="/mnt/afs/denghanming/projects/qwen3_pretrain/pretrained/qwen3_14B",
-    )
+    llm_model_name_or_path: Optional[str] = field(default=None)
+    tokenizer_name_or_path: Optional[str] = field(default=None)
+    model_max_length: int = field(default=8096)
     # position embedding settings
     rope_theta_hw: float = field(default=10000.0)
     max_position_embeddings_hw: int = field(default=10000)
@@ -23,7 +20,6 @@ class ModelArguments:
     vision_num_channels: int = field(default=3)
     extra_num_layers: int = field(default=1)
     num_hidden_layers: int = field(default=2)
-    dtype: str = field(default="bfloat16")
     # Other model configs
     use_cache: bool = field(default=False)
     # Training control flags
@@ -36,15 +32,11 @@ class DataArguments:
     patch_size: int = field(default=16)
     max_pixels: int = field(default=262144)
     min_pixels: int = field(default=12544)
-    # Data paths and config
     dataset_use: str = field(default="sbu_captions")
     data_flatten: bool = field(default=True)
-    # Image processing settings
     downsample_ratio: float = field(default=0.5)
     dynamic_image_size: str = field(default="native_resolution")
-    # Packed dataset args
-    max_seq_length: int = field(default=8096)
-    # Loss settings
+    max_seq_length: int = field(default=8192)
     loss_reduction: str = field(default="square")
 
 
@@ -52,8 +44,7 @@ class DataArguments:
 class TrainingArguments(HfTrainingArguments):
     seed: int = field(default=42)
     cache_dir: Optional[str] = field(default=None)
-    model_max_length: int = field(default=8096)
-    dataloader_num_workers: int = field(default=0)  # 改为 0，使用主进程加载数据
+    dataloader_num_workers: int = field(default=4)
     learning_rate: float = field(default=2e-4)
     weight_decay: float = field(default=0.1)
     adam_beta1: float = field(default=0.9)
@@ -63,7 +54,7 @@ class TrainingArguments(HfTrainingArguments):
     min_lr_ratio: float = field(default=0.0)
     warmup_ratio: float = field(default=0.0)
     warmup_steps: int = field(default=0)
-    max_steps: int = field(default=1000)
+    max_steps: int = field(default=200000)
     gradient_accumulation_steps: int = field(default=1)
     max_grad_norm: float = field(default=1.0)
     save_steps: int = field(default=5000)

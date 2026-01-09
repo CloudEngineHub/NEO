@@ -155,39 +155,60 @@ configs = data_list(dataset_names)
 ## Usage
 
 To train a model:
+
 ```bash
 #!/bin/bash
 
-# Distributed training configuration
+#==============================================================================
+# 🌐 Distributed Training Configuration
+#==============================================================================
 MASTER_ADDR=${MASTER_ADDR:-"127.0.0.1"}
 MASTER_PORT=${MASTER_PORT:-$(shuf -i 20001-29999 -n 1)}
 NNODES=${WORLD_SIZE:-1}
 
-# DeepSpeed configuration
+#==============================================================================
+# ⚡ DeepSpeed Configuration
+#==============================================================================
 deepspeed=./scripts/zero3.json
 
-# Model configuration
-# For detailed logic, refer to: neo/model/build.py build_model function
-mllm=""  # Path to pre-trained NEO model for SFT (Supervised Fine-Tuning) on top of an existing checkpoint
-llm=""  # Path to the base LLM model for training NEO from scratch
-tokenizer=""  # Path to the tokenizer
+#==============================================================================
+# 🤖 Model Configuration
+# 📖 For detailed logic, refer to: neo/model/build.py build_model function
+#==============================================================================
+mllm=""       # 🔧 Path to pre-trained NEO model for SFT (Supervised Fine-Tuning)
+llm=""        # 🏗️  Path to the base LLM model for training NEO from scratch
+tokenizer=""  # 📝 Path to the tokenizer
 
-# Training hyperparameters
+#==============================================================================
+# 🎯 Training Hyperparameters
+#==============================================================================
 lr=2e-4
-batch_size=1
-grad_accum_steps=1
 
-# Training entry point
+# 💥💥💥 Global Batch Size Control
+# Formula: Global batch size = batch_size × grad_accum_steps × num_gpus
+# When data_flatten is enabled, batch_size also controls the length of flattened data
+batch_size=1         # 📦 Per-device batch size for controlling global batch size and flatten data length
+grad_accum_steps=1   # 🔄 Gradient accumulation steps for controlling global batch size
+
+#==============================================================================
+# 🚀 Training Entry Point
+#==============================================================================
 entry_file=neo/train/train.py
 
-# Dataset configuration (replace with public dataset names)
-datasets=""
+#==============================================================================
+# 📊 Dataset Configuration
+#==============================================================================
+datasets=""  # 📁 Replace with your dataset names (e.g., "dataset1,dataset2%50")
 
-# Output configuration
+#==============================================================================
+# 💾 Output Configuration
+#==============================================================================
 run_name="neo-baseline"
 output_dir=./output
 
-# Training arguments
+#==============================================================================
+# ⚙️ Training Arguments
+#==============================================================================
 args="
     --deepspeed ${deepspeed} \
     --model_name_or_path "${mllm}" \ 
@@ -195,34 +216,39 @@ args="
     --data_flatten True \
     --dtype bfloat16 \
     --output_dir ${output_dir} \
-    --extra_num_layers 12 \   # Number of pre-buffer layers
-    --num_hidden_layers 28 \  # Total number of layers in the model
-    --train_buffer \  # Whether to train only the prebuffer layers
+    --extra_num_layers 12 \   # 🧱 Number of pre-buffer layers
+    --num_hidden_layers 28 \  # 🏗️  Total number of layers in the model
+    --train_buffer \          # 🎓 Whether to train only the prebuffer layers
     --num_train_epochs 1 \
     --per_device_train_batch_size ${batch_size} \
     --per_device_eval_batch_size $((batch_size*2)) \
     --gradient_accumulation_steps ${grad_accum_steps} \
-    --max_pixels 262144 \
-    --min_pixels 12544 \
+    --max_pixels 262144 \     # 🖼️  Maximum pixels for image processing
+    --min_pixels 12544 \      # 🖼️  Minimum pixels for image processing
     --eval_strategy "no" \
     --save_strategy "steps" \
     --save_steps 1000 \
     --save_total_limit 1 \
     --learning_rate ${lr} \
     --weight_decay 0.0 \
-    --warmup_ratio 0.03 \
+    --warmup_steps 1000 \     # 🔥 Learning rate warmup steps
     --max_grad_norm 1 \
     --logging_steps 1 \
-    --model_max_length 8096 \
+    --max_seq_length 18432 \  # ✂️  Maximum length after data flattening; sequences exceeding this will be truncated (see FlattenedDataCollatorForSupervisedDataset in data_processor.py)
+    --model_max_length 18432 \
     --gradient_checkpointing True \
     --dataloader_num_workers 4 \
     --run_name ${run_name} \
-    --report_to tensorboard"
+    --report_to tensorboard"  # 📈 Logging to TensorBoard
 
-# Set PYTHONPATH to project root
+#==============================================================================
+# 🔧 Environment Setup
+#==============================================================================
 export PYTHONPATH="${PYTHONPATH}:$(pwd)"
 
-# Launch training
+#==============================================================================
+# 🎬 Launch Training
+#==============================================================================
 torchrun --nproc_per_node=2 \
          --master_addr=${MASTER_ADDR} \
          --master_port=${MASTER_PORT} \
