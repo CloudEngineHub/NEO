@@ -129,7 +129,7 @@ This project evaluates **NEO-ov** models across **3 major benchmark categories**
   <!-- Native VLMs (2B) -->
   <tr><td colspan="14" align="left">🔻<b>Vision Language Models (Instruct-2B)</b></td></tr>
   <tr>
-    <td>InternVL3.5-2B</td><td>Qwen3-1.7B</td>
+    <td>InternVL3.5</td><td>Qwen3-1.7B</td>
     <td align="center">53.0</td>
     <td align="center">78.2</td>
     <td align="center">62.0</td>
@@ -144,7 +144,7 @@ This project evaluates **NEO-ov** models across **3 major benchmark categories**
     <td align="center">48.6</td>
   </tr>
   <tr>
-    <td>Qwen3-VL-2B</td><td>Qwen3-1.7B</td>
+    <td>Qwen3-VL</td><td>Qwen3-1.7B</td>
     <td align="center">53.4</td>
     <td align="center">78.4</td>
     <td align="center">63.9</td>
@@ -159,7 +159,7 @@ This project evaluates **NEO-ov** models across **3 major benchmark categories**
     <td align="center">51.4</td>
   </tr>
   <tr>
-    <td><b>NEO-ov-2B</b></td><td>Qwen3-1.7B</td>
+    <td><b>NEO-ov</b></td><td>Qwen3-1.7B</td>
     <td align="center"><b>54.7</b></td>
     <td align="center"><b>80.0</b></td>
     <td align="center"><b>64.7</b></td>
@@ -177,7 +177,7 @@ This project evaluates **NEO-ov** models across **3 major benchmark categories**
   <tr><td colspan="14" align="left">🔻<b>Vision Language Models (Instruct-8B)</b></td></tr>
   <tr>
   <tr>
-    <td>InternVL3.5-9B</td><td>Qwen3-8B</td>
+    <td>InternVL3.5</td><td>Qwen3-8B</td>
     <td align="center">68.1</td>
     <td align="center">82.7</td>
     <td align="center">67.5</td>
@@ -192,7 +192,7 @@ This project evaluates **NEO-ov** models across **3 major benchmark categories**
     <td align="center">54.5</td>
   </tr>
   <tr>
-    <td>Qwen3-VL-9B</td><td>Qwen3-8B</td>
+    <td>Qwen3-VL</td><td>Qwen3-8B</td>
     <td align="center">69.6</td>
     <td align="center">84.5</td>
     <td align="center">71.5</td>
@@ -207,7 +207,7 @@ This project evaluates **NEO-ov** models across **3 major benchmark categories**
     <td align="center">61.1</td>
   </tr>
   <tr>
-    <td><b>NEO-ov-9B</b></td><td>Qwen3-8B</td>
+    <td><b>NEO-ov</b></td><td>Qwen3-8B</td>
     <td align="center"><b>68.1</b></td>
     <td align="center"><b>85.1</b></td>
     <td align="center"><b>68.8</b></td>
@@ -244,7 +244,7 @@ This project evaluates **NEO-ov** models across **3 major benchmark categories**
   <tr><td colspan="8" align="left">🔻<b>Vision Language Models (Instruct-2B)</b></td></tr>
   <tr>
   <tr>
-    <td>InternVL3.5-2B</td><td>Qwen3-1.7B</td>
+    <td>InternVL3.5</td><td>Qwen3-1.7B</td>
     <td align="center">58.4</td>
     <td align="center">65.9</td>
     <td align="center">37.6</td>
@@ -253,7 +253,7 @@ This project evaluates **NEO-ov** models across **3 major benchmark categories**
     <td align="center">42.7</td>
   </tr>
   <tr>
-    <td>Qwen3-VL-2B</td><td>Qwen3-1.7B</td>
+    <td>Qwen3-VL</td><td>Qwen3-1.7B</td>
     <td align="center">61.9</td>
     <td align="center">61.7</td>
     <td align="center">47.4</td>
@@ -262,7 +262,7 @@ This project evaluates **NEO-ov** models across **3 major benchmark categories**
     <td align="center">41.9</td>
   </tr>
   <tr>
-    <td><b>NEO-ov-2B</b></td><td>Qwen3-1.7B</td>
+    <td><b>NEO-ov</b></td><td>Qwen3-1.7B</td>
     <td align="center"><b>60.4</b></td>
     <td align="center"><b>65.7</b></td>
     <td align="center"><b>43.3</b></td>
@@ -273,7 +273,7 @@ This project evaluates **NEO-ov** models across **3 major benchmark categories**
   <!-- Native VLMs (8B) -->
   <tr><td colspan="8" align="left">🔻<b>Vision Language Models (Instruct-8B)</b></td></tr>
   <tr>
-    <td>InternVL3.5-9B</td><td>Qwen3-8B</td>
+    <td>InternVL3.5</td><td>Qwen3-8B</td>
     <td align="center">66.0</td>
     <td align="center">72.1</td>
     <td align="center">45.9</td>
@@ -282,7 +282,7 @@ This project evaluates **NEO-ov** models across **3 major benchmark categories**
     <td align="center">54.9</td>
   </tr>
     <tr>
-    <td>Qwen3-VL-9B</td><td>Qwen3-8B</td>
+    <td>Qwen3-VL</td><td>Qwen3-8B</td>
     <td align="center">71.4</td>
     <td align="center">68.7</td>
     <td align="center">58.0</td>
@@ -291,7 +291,7 @@ This project evaluates **NEO-ov** models across **3 major benchmark categories**
     <td align="center">65.3</td>
   </tr>
   <tr>
-    <td><b>NEO-ov-9B</b></td><td>Qwen3-8B</td>
+    <td><b>NEO-ov</b></td><td>Qwen3-8B</td>
     <td align="center"><b>67.4</b></td>
     <td align="center"><b>70.7</b></td>
     <td align="center"><b>46.4</b></td>
@@ -327,7 +327,7 @@ This project evaluates **NEO-ov** models across **3 major benchmark categories**
   <!-- Native VLMs (2B) -->
   <tr><td colspan="14" align="left">🔻<b>Vision Language Models (Instruct-2B)</b></td></tr>
   <tr>
-    <td>InternVL3.5-2B</td><td>Qwen3-1.7B</td>
+    <td>InternVL3.5</td><td>Qwen3-1.7B</td>
     <td align="center">53.8</td>
     <td align="center">25.6</td>
     <td align="center">42.1</td>
@@ -343,7 +343,7 @@ This project evaluates **NEO-ov** models across **3 major benchmark categories**
   </tr>
 
   <tr>
-    <td>Qwen3-VL-2B</td><td>Qwen3-1.7B</td>
+    <td>Qwen3-VL</td><td>Qwen3-1.7B</td>
     <td align="center">53.9</td>
     <td align="center">27.8</td>
     <td align="center">34.2</td>
@@ -358,7 +358,7 @@ This project evaluates **NEO-ov** models across **3 major benchmark categories**
     <td align="center">47.4</td>
   </tr>
   <tr>
-    <td><b>NEO-ov-2B</b></td><td>Qwen3-1.7B</td>
+    <td><b>NEO-ov</b></td><td>Qwen3-1.7B</td>
     <td align="center"><b>58.4</b></td>
     <td align="center"><b>33.6</b></td>
     <td align="center"><b>77.2</b></td>
@@ -375,7 +375,7 @@ This project evaluates **NEO-ov** models across **3 major benchmark categories**
   <!-- Native VLMs (8B) -->
   <tr><td colspan="14" align="left">🔻<b>Vision Language Models (Instruct-8B)</b></td></tr>
   <tr>
-    <td>InternVL3.5-9B</td><td>Qwen3-8B</td>
+    <td>InternVL3.5</td><td>Qwen3-8B</td>
     <td align="center">56.3</td>
     <td align="center">29.1</td>
     <td align="center">40.4</td>
@@ -390,7 +390,7 @@ This project evaluates **NEO-ov** models across **3 major benchmark categories**
     <td align="center">55.8</td>
   </tr>
   <tr>
-    <td>Qwen3-VL-9B</td><td>Qwen3-8B</td>
+    <td>Qwen3-VL</td><td>Qwen3-8B</td>
     <td align="center">59.4</td>
     <td align="center">31.2</td>
     <td align="center">29.6</td>
@@ -405,7 +405,7 @@ This project evaluates **NEO-ov** models across **3 major benchmark categories**
     <td align="center">64.4</td>
   </tr>
   <tr>
-    <td><b>NEO-ov-9B</b></td><td>Qwen3-8B</td>
+    <td><b>NEO-ov</b></td><td>Qwen3-8B</td>
     <td align="center"><b>64.8</b></td>
     <td align="center"><b>41.3</b></td>
     <td align="center"><b>90</b></td>

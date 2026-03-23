@@ -82,7 +82,7 @@ We release 2B and 9B **NEO** in Pre-Training (PT), Mid-Training (MT), and Superv
     <th rowspan="2" align="left">RoPE_TYPE</th>
     <th colspan="1" align="center">📚 Knowledge</th>
     <th colspan="4" align="center">💬 General VQA</th>
-    <th colspan="5" align="center">🔍 OCR VQA</th>
+    <th colspan="6" align="center">🔍 OCR VQA</th>
     <th colspan="2" align="center">👻 Hallucination</th>
   </tr>
   <tr>
@@ -179,7 +179,7 @@ We release 2B and 9B **NEO** in Pre-Training (PT), Mid-Training (MT), and Superv
     <th rowspan="2" align="left">RoPE_TYPE</th>
     <th colspan="1" align="center">📚 Knowledge</th>
     <th colspan="4" align="center">💬 General VQA</th>
-    <th colspan="5" align="center">🔍 OCR VQA</th>
+    <th colspan="6" align="center">🔍 OCR VQA</th>
     <th colspan="2" align="center">👻 Hallucination</th>
   </tr>
   <tr>
